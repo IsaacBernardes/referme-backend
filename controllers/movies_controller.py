@@ -44,8 +44,6 @@ async def list_movie_details(request: Request, movie_id: int):
             result["genres"] = genres_service.list_all_by_movie(movie_id)
             result["platforms"] = platforms_service.list_all_by_movie(movie_id)
 
-        print()
-
         return response.json({"result": result}, 200)
 
     except KeyError as ex:

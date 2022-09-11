@@ -21,9 +21,9 @@ class MoviesRepository:
                             SELECT m."id",
                                    m."name",
                                    m."synopsis",
-                                   m."rating",
-                                   m."image_url",
-                                   m."trailer_url"
+                                   m."rating"/2 as "score",
+                                   m."image_url" as "image",
+                                   m."trailer_url" as "trailerURL"
                             FROM public."movie" m
                             ORDER BY m."name"
                         )js;"""
@@ -56,9 +56,9 @@ class MoviesRepository:
                     SELECT m."id",
                            m."name",
                            m."synopsis",
-                           m."rating",
-                           m."image_url",
-                           m."trailer_url"
+                           m."rating"/2 as "score",
+                           m."image_url" as "image",
+                           m."trailer_url" as "trailerURL"
                     FROM public."movie" m
                     ORDER BY m."name"
                     LIMIT %(limit)s
@@ -99,9 +99,9 @@ class MoviesRepository:
                             SELECT m."id",
                                    m."name",
                                    m."synopsis",
-                                   m."rating",
-                                   m."image_url",
-                                   m."trailer_url"
+                                   m."rating"/2 as "score",
+                                   m."image_url" as "image",
+                                   m."trailer_url" as "trailerURL"
                             FROM public."movie" m
                             WHERE m."id" = %(movieId)s
                             LIMIT 1

@@ -6,7 +6,7 @@ class Connection:
     def __init__(self):
         self.host = os.environ["DB_HOST"]
         self.port = os.environ["DB_PORT"]
-        self.name = os.environ["DB_name"]
+        self.name = os.environ["DB_NAME"]
         self.user = os.environ["DB_USER"]
         self.password = os.environ["DB_PASSWORD"]
 

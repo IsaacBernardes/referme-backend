@@ -2,29 +2,7 @@
 -- pgModeler version: 0.9.4
 -- PostgreSQL version: 13.0
 -- Project Site: pgmodeler.io
--- Model Author: ---
--- object: isaac | type: ROLE --
--- DROP ROLE IF EXISTS isaac;
-CREATE ROLE isaac WITH 
-	SUPERUSER
-	INHERIT
-	LOGIN
-	ENCRYPTED PASSWORD '********';
--- ddl-end --
-
-
--- Database creation must be performed outside a multi lined SQL file. 
--- These commands were put in this file only as a convenience.
--- 
--- object: new_database | type: DATABASE --
--- DROP DATABASE IF EXISTS new_database;
-CREATE DATABASE new_database
-	ENCODING = 'UTF8'
-	LC_COLLATE = 'Portuguese_Brazil.1252'
-	LC_CTYPE = 'Portuguese_Brazil.1252'
-	TABLESPACE = pg_default
-	OWNER = postgres;
--- ddl-end --
+-- Model Author: ISAAC JOAS BERNARDES DE LIMA
 
 
 -- object: public.movie | type: TABLE --

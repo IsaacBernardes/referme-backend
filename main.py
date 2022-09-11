@@ -2,8 +2,12 @@ import os
 from sanic import Sanic
 
 from controllers import movies_controller, genre_controller, platforms_controller
+from utils.cors import add_cors_headers
+from utils.options import setup_options
 
 app = Sanic("backend")
+app.register_listener(setup_options, "before_server_start")
+app.register_middleware(add_cors_headers, "response")
 
 
 if __name__ == "__main__":
