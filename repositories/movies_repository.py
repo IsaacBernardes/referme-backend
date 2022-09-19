@@ -1,3 +1,4 @@
+from models.Movie import Movie
 from utils.logger import Logger
 from database.connection import Connection
 
@@ -56,7 +57,7 @@ class MoviesRepository:
                     SELECT m."id",
                            m."name",
                            m."synopsis",
-                           m."rating"/2 as "score",
+                           m."rating" as "score",
                            m."image_url" as "image",
                            m."trailer_url" as "trailerURL"
                     FROM public."movie" m
@@ -99,7 +100,7 @@ class MoviesRepository:
                             SELECT m."id",
                                    m."name",
                                    m."synopsis",
-                                   m."rating"/2 as "score",
+                                   m."rating" as "score",
                                    m."image_url" as "image",
                                    m."trailer_url" as "trailerURL"
                             FROM public."movie" m
@@ -118,6 +119,70 @@ class MoviesRepository:
 
         if len(result) > 0:
             result = result[0]
+
+        return result
+
+    def insert_movie(self, movie: Movie):
+        logger = Logger(
+            class_name=self.class_name,
+            function="insert_movie",
+            version=self.version,
+            parameters={
+                "movie": movie
+            }
+        )
+
+        logger.add_common_action("database_connection", "Establishing a connection to the database")
+        conn = Connection()
+        cnx = conn.connect()
+        cursor = cnx.cursor()
+        logger.finish_common_action("database_connection", True)
+
+        query = """SELECT json_agg(js) FROM (
+                            SELECT m."id",
+                            FROM public."movie" m
+                            WHERE m."name" = %(name)s
+                        )js;"""
+
+        params = {
+            "name": movie.name,
+            "synopsis": movie.synopsis,
+            "rating": movie.rating,
+            "image_url": movie.image_url
+        }
+
+        logger.add_database_action("find_movie", "Find movie by name", query, params)
+        cursor.execute(query, params)
+        result = cursor.fetchone()[0]
+        logger.finish_database_action("find_movie", True, len(result))
+
+        if len(result) > 0:
+            logger.add_exception("Movie already exists")
+            return None
+
+        query = """INSERT INTO public."movie" m ("name", "synopsis", "rating", "image_url")
+                   VALUES (%(name)s, %(synopsis)s, %(rating)s, %(image_url)s)
+                   RETURNING json_build_object(
+                       'id', id,
+                       'name', name,
+                       'synopsis', synopsis,
+                       'score', rating,
+                       'image', image_url,
+                       'trailerURL', video_url
+                   );
+                   """
+
+        params = {
+            "name": movie.name,
+            "synopsis": movie.synopsis,
+            "rating": movie.rating,
+            "image_url": movie.image_url
+        }
+
+        logger.add_database_action("insert_movie", "Insert movie", query, params)
+        cursor.execute(query, params)
+        result = cursor.fetchone()[0]
+        logger.finish_database_action("insert_movie", True, len(result))
 
         return result
 

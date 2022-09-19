@@ -1,3 +1,4 @@
+from models.Movie import Movie
 from repositories.movies_repository import MoviesRepository
 
 
@@ -15,3 +16,6 @@ class MoviesService:
 
     def find_one(self, movie_id):
         return self._movie_repository.find_one(movie_id)
+
+    def insert_movie(self, movie: Movie):
+        return self._movie_repository.insert_movie(movie)
