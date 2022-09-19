@@ -13,7 +13,7 @@ from models.Movie import Movie
 from services.movies_service import MoviesService
 
 
-def trendings_schedule():
+def trends_schedule():
     last_search = open("routines/last_search.txt", "r").read()
 
     if last_search is None or len(last_search) == 0:
@@ -23,10 +23,10 @@ def trendings_schedule():
         next_search = last_search + timedelta(weeks=1)
 
     if datetime.now() > next_search:
+        schedule_and_execute()
+    else:
         scheduler = BackgroundScheduler()
         scheduler.scheduled_job(func=schedule_and_execute, trigger='date', run_date=next_search)
-    else:
-        schedule_and_execute()
 
 
 def schedule_and_execute():
@@ -47,7 +47,7 @@ def search_for_movies():
     browser = webdriver.Chrome(options=options, service=service)
     browser.get("https://filmow.com/filmes-em-dvd/")
 
-    movies = list_movies(browser)
+    movies = list_movies(browser, 10)
 
     open("routines/last_search.txt", "w").write(datetime.now().isoformat())
 
@@ -56,7 +56,9 @@ def search_for_movies():
             .set_name(movie["name"])\
             .set_image(movie["image_url"])\
             .set_rating(movie["rating"])\
-            .set_synopsis(movie["synopsis"])
+            .set_synopsis(movie["synopsis"])\
+            .set_genres(movie["genres"])\
+            .set_popular(True)
 
         movie_service.insert_movie(build_movie)
 

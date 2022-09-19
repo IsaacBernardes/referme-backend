@@ -1,6 +1,7 @@
 import os
 from sanic import Sanic
 
+from routines.trends_finder import trends_schedule
 from controllers import movies_controller, genre_controller, platforms_controller
 from utils.cors import add_cors_headers
 from utils.options import setup_options
@@ -11,6 +12,8 @@ app.register_middleware(add_cors_headers, "response")
 
 
 if __name__ == "__main__":
+    trends_schedule()
+
     movies_controller.create_app(app)
     genre_controller.create_app(app)
     platforms_controller.create_app(app)

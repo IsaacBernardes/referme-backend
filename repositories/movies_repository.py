@@ -22,11 +22,43 @@ class MoviesRepository:
                             SELECT m."id",
                                    m."name",
                                    m."synopsis",
-                                   m."rating"/2 as "score",
+                                   m."rating" as "score",
                                    m."image_url" as "image",
-                                   m."trailer_url" as "trailerURL"
+                                   m."trailer_url" as "trailerURL",
+                                   m."popular" as "popular"
                             FROM public."movie" m
                             ORDER BY m."name"
+                        )js;"""
+
+        logger.add_database_action("list_movies", "List movies with limits", query, {})
+        cursor.execute(query)
+        result = cursor.fetchone()[0]
+        logger.finish_database_action("list_movies", True, len(result))
+
+        return result
+
+    def list_popular(self):
+        logger = Logger(class_name=self.class_name, function="list_popular", version=self.version)
+
+        logger.add_common_action("database_connection", "Establishing a connection to the database")
+        conn = Connection()
+        cnx = conn.connect()
+        cursor = cnx.cursor()
+        logger.finish_common_action("database_connection", True)
+
+        query = """SELECT json_agg(js) FROM (
+                            SELECT m."id",
+                                   m."name",
+                                   m."synopsis",
+                                   m."rating" as "score",
+                                   m."image_url" as "image",
+                                   m."trailer_url" as "trailerURL",
+                                   m."popular" as "popular",
+                                   ARRAY_AGG(g."alias") AS "genres"
+                            FROM public."movie" m, public."genre" g, public."movie_genres" mg
+                            WHERE m."popular" IS TRUE AND g."id" = mg."id_genre"
+                            AND mg."id_movie" = m."id"
+                            GROUP BY m."id" ORDER BY m."name"
                         )js;"""
 
         logger.add_database_action("list_movies", "List movies with limits", query, {})
@@ -59,7 +91,8 @@ class MoviesRepository:
                            m."synopsis",
                            m."rating" as "score",
                            m."image_url" as "image",
-                           m."trailer_url" as "trailerURL"
+                           m."trailer_url" as "trailerURL",
+                           m."popular" as "popular"
                     FROM public."movie" m
                     ORDER BY m."name"
                     LIMIT %(limit)s
@@ -139,7 +172,7 @@ class MoviesRepository:
         logger.finish_common_action("database_connection", True)
 
         query = """SELECT json_agg(js) FROM (
-                            SELECT m."id",
+                            SELECT m."id"
                             FROM public."movie" m
                             WHERE m."name" = %(name)s
                         )js;"""
@@ -148,41 +181,59 @@ class MoviesRepository:
             "name": movie.name,
             "synopsis": movie.synopsis,
             "rating": movie.rating,
-            "image_url": movie.image_url
+            "image_url": movie.image_url,
+            "popular": movie.popular
         }
 
         logger.add_database_action("find_movie", "Find movie by name", query, params)
         cursor.execute(query, params)
         result = cursor.fetchone()[0]
-        logger.finish_database_action("find_movie", True, len(result))
+        logger.finish_database_action("find_movie", True)
 
-        if len(result) > 0:
+        if result is not None and len(result) > 0:
             logger.add_exception("Movie already exists")
             return None
 
-        query = """INSERT INTO public."movie" m ("name", "synopsis", "rating", "image_url")
-                   VALUES (%(name)s, %(synopsis)s, %(rating)s, %(image_url)s)
+        query = """INSERT INTO public."movie" ("name", "synopsis", "rating", "image_url", "popular")
+                   VALUES (%(name)s, %(synopsis)s, %(rating)s, %(image_url)s, %(popular)s)
                    RETURNING json_build_object(
                        'id', id,
                        'name', name,
                        'synopsis', synopsis,
                        'score', rating,
                        'image', image_url,
-                       'trailerURL', video_url
+                       'trailerURL', trailer_url,
+                       'popular', popular
                    );
                    """
 
-        params = {
-            "name": movie.name,
-            "synopsis": movie.synopsis,
-            "rating": movie.rating,
-            "image_url": movie.image_url
-        }
-
         logger.add_database_action("insert_movie", "Insert movie", query, params)
         cursor.execute(query, params)
-        result = cursor.fetchone()[0]
-        logger.finish_database_action("insert_movie", True, len(result))
+        movie_object = cursor.fetchone()[0]
+        cnx.commit()
+        logger.finish_database_action("insert_movie", True)
 
-        return result
+        if movie_object is not None and len(movie.genres) > 0:
 
+            query = """SELECT g."id" FROM public."genre" g
+                       WHERE LOWER(g."alias") LIKE ANY(%(genres)s);"""
+
+            params = {
+                "genres": ["%" + str(x).lower() + "%" for x in movie.genres]
+            }
+
+            cursor.execute(query, params)
+            genre_id_list = cursor.fetchone()
+
+            if genre_id_list is None:
+                return movie_object
+
+            query = """INSERT INTO "movie_genres" ("id_movie", "id_genre") VALUES"""
+            for genre_id in genre_id_list:
+                query += f" ({movie_object['id']}, {genre_id}),"
+            query = query[:-1] + ";"
+
+            cursor.execute(query)
+            cnx.commit()
+
+        return movie_object

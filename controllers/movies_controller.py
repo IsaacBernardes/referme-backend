@@ -32,6 +32,28 @@ async def list_movies(request: Request):
         }, 500)
 
 
+async def list_trends(request: Request):
+    try:
+
+        movies_service = MoviesService()
+        result = movies_service.list_popular()
+        return response.json({"result": result}, 200)
+
+    except KeyError as ex:
+        return response.json({
+            "error": "KeyError",
+            "message": "Invalid request params",
+            "exception": str(ex)
+        }, 400)
+
+    except Exception as ex:
+        return response.json({
+            "error": "DefaultError",
+            "message": "Unexpected error occurred",
+            "exception": str(ex)
+        }, 500)
+
+
 async def list_movie_details(request: Request, movie_id: int):
     try:
 
@@ -63,5 +85,6 @@ async def list_movie_details(request: Request, movie_id: int):
 
 def create_app(app: Sanic):
     app.add_route(list_movies, "/api/movies", methods=["GET"])
+    app.add_route(list_trends, "/api/trends", methods=["GET"])
     app.add_route(list_movie_details, "/api/movies/<movie_id:int>", methods=["GET"])
 
