@@ -13,9 +13,9 @@ class MoviesService:
     def list_popular(self):
         return self._movie_repository.list_popular()
 
-    def list_all_paginated(self, page, size):
+    def list_all_paginated(self, page, size, search=""):
         offset = page * size
-        return self._movie_repository.list_all_paginated(size, offset)
+        return self._movie_repository.list_all_paginated(size, offset, search)
 
     def find_one(self, movie_id):
         return self._movie_repository.find_one(movie_id)

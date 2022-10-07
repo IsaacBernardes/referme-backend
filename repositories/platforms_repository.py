@@ -69,6 +69,7 @@ class PlatformsRepository:
         logger.add_database_action("list_platforms_by_movie", "List all platforms of a specified movie", query, params)
         cursor.execute(query, params)
         result = cursor.fetchone()[0]
-        logger.finish_database_action("list_genres_of_movie", True, len(result))
+        rows = 0 if result is None else len(result)
+        logger.finish_database_action("list_genres_of_movie", True, rows)
 
         return result

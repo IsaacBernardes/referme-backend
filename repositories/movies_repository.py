@@ -68,14 +68,15 @@ class MoviesRepository:
 
         return result
 
-    def list_all_paginated(self, limit=100, offset=0):
+    def list_all_paginated(self, limit=100, offset=0, search=""):
         logger = Logger(
             class_name=self.class_name,
             function="list_all_paginated",
             version=self.version,
             parameters={
                 "limit": limit,
-                "offset": offset
+                "offset": offset,
+                "search": search
             }
         )
 
@@ -94,6 +95,7 @@ class MoviesRepository:
                            m."trailer_url" as "trailerURL",
                            m."popular" as "popular"
                     FROM public."movie" m
+                    WHERE lower(m."name") LIKE lower(%(search)s)
                     ORDER BY m."name"
                     LIMIT %(limit)s
                     OFFSET %(offset)s
@@ -101,7 +103,8 @@ class MoviesRepository:
 
         params = {
             "limit": limit,
-            "offset": offset
+            "offset": offset,
+            "search": "%" + search + "%"
         }
 
         logger.add_database_action("list_some_movies", "List movies with limits", query, params)

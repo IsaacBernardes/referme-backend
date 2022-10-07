@@ -5,6 +5,7 @@ from utils.request_tools import build_query_params
 from services.movies_service import MoviesService
 from services.genres_service import GenresService
 from services.platforms_service import PlatformsService
+from recommendation.recommendations import get_recommendations
 
 
 async def list_movies(request: Request):
@@ -14,7 +15,33 @@ async def list_movies(request: Request):
 
         query_params = build_query_params(request.query_args)
         page = int(query_params.get("page", 0))
-        result = movies_service.list_all_paginated(page, 100)
+        search = query_params.get("search", "")
+        result = movies_service.list_all_paginated(page, 100, search)
+        return response.json({"result": result}, 200)
+
+    except KeyError as ex:
+        return response.json({
+            "error": "KeyError",
+            "message": "Invalid request params",
+            "exception": str(ex)
+        }, 400)
+
+    except Exception as ex:
+        return response.json({
+            "error": "DefaultError",
+            "message": "Unexpected error occurred",
+            "exception": str(ex)
+        }, 500)
+
+
+async def list_references(request: Request):
+    try:
+        query_params = build_query_params(request.query_args)
+        likes = [int(x) for x in query_params.get("likes", "").split(",") if x.isnumeric()]
+        dislikes = [int(x) for x in query_params.get("dislikes", "").split(",") if x.isnumeric()]
+        print(likes)
+        print(dislikes)
+        result = get_recommendations(likes, dislikes)
         return response.json({"result": result}, 200)
 
     except KeyError as ex:
@@ -86,5 +113,6 @@ async def list_movie_details(request: Request, movie_id: int):
 def create_app(app: Sanic):
     app.add_route(list_movies, "/api/movies", methods=["GET"])
     app.add_route(list_trends, "/api/trends", methods=["GET"])
+    app.add_route(list_references, "/api/refer", methods=["GET"])
     app.add_route(list_movie_details, "/api/movies/<movie_id:int>", methods=["GET"])
 
